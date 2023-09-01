@@ -1,0 +1,306 @@
+\chapter{Financial Modelling}
+\label{ch2}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% IMPORTANT
+\singlespacing % THESE THREE
+\minitoc % LINES MUST APPEAR IN
+\doublespacing % EVERY CHAPTER
+% COPY THEM IN ANY NEW CHAPTER
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Overview}
+
+In this chapter the process of algorithmic trading, its components and actors. This section will tackle a general overview of the trading process and the next one, Section \ref{sec::2_Modelling} will address the modelling of each component. 
+
+Trading usually buy not necessarily happens at and is facilitated by a financial market, were brokers and traders exchange financial instruments \cite{hanbookOfFinance_fabozzi,assetPricing}. These exchanges usually happen through the usage of orders, that can take the form of Market orders where the price of each exchanged share  takes the best available price in the market or Limit Orders, were the order is only executed if the price is in line with constraint put by the issuer of the order \cite{market_vs_limit_order}.
+
+Besides traders and brokers there is a third actor in the trading space which are investors, investors trade through broker or brokerage accounts, brokers usually charge commission rates and fees to investors to trade on their behalf \cite{hanbookOfFinance_fabozzi}.
+
+Is worth mentioning that the role of the broker, advantages for the investor and its necessity in the process is often discussed and questioned, as Direct Access Markets often have lower fees and the practice of Internalization by brokers often reduces transparency \cite{hanbookOfFinance_fabozzi,whyDoWeNeedBrokers}. 
+
+% Put Mixture of theoretical background and also examples of documentation and code in AirBorne that shows  how it looks in code and how to use it. On each section (if possible) add at the end how it looks in code in Julia and even better how it looks in AirBorne if implemented.
+
+\section{Modelling} \label{sec::2_Modelling}
+This section will describe in detail the modelling of different actors and mechanism of trading found in literature. Starting from a definition on portfolio, asset pricing
+
+\subsection{Portfolio definition:}
+The portfolio usually is often thought as the set of assets one owns at any point in time, however its precise definition is not often explicitly addressed.
+
+Few texts try to address the question \textbf{``what is a portfolio?"} when attempting to perform portfolio optimization, raising the question, ``what are they actually optimizing?" and ``do we actually understand the solution and our problem?", see Figure \ref{fig::what_is_a_portfolio}. 
+
+In this section are presented an introduction to what is a portfolio, how is it modelled and what theories have been put forward to the date.
+
+\begin{figure}[!ht]
+    \centering
+    % \includegraphics[width=1\textwidth]{imgs/ch2/what_is_a_portfolio.eps}
+    \includesvg[width=1\textwidth]{imgs/ch2/what_is_a_portfolio.svg}
+    \caption[Portfolio optimization]{Portfolio optimization}
+    \label{fig::what_is_a_portfolio}
+\end{figure}
+
+
+\subsubsection{Portfolio Theories} \label{sec::2_portfolio_theories}
+At its core portfolio theories attempt to describe the internal structure of a collection of assets that are given the name of portfolio, each asset have a set of attributes (price, liquidity) which can change over time and attributes of the portfolio can be derived as a combination of the attributes of the assets that conform it. Some theories try to separate themselves from pricing mechanisms or more broadly from the specific methods used for the determination of the assets attributes. Below the most relevant portfolio theories to this project are presented in chronological order pointing out the major contributions/features with respect to their predecessors.
+
+\textbf{Classical Portfolio Theory, 1952:} This theory is built around ``probability beliefs", meaning beliefs of people have around how assets will behave in the future expressed in probabilistic terms, and although being widely referenced as a portfolio theory it does not explicitly states what a portfolio is but how to select a portfolio. Introducing a boundary of efficient portfolios with extreme returns and variance of returns combinations. Moreover during the optimization process it assumes that each asset has a known market price distribution over time whose parameters are obtained beforehand, but it does not address how such values should be obtained and leaves it as an assumption of the model \cite{classical_portfolio_theory}.
+
+\textbf{Modern Portfolio Theory of Dynamic Asset Pricing, 1992:} This theory when taken in a discrete setting introduces the representation of a portfolio $\theta$ as an array of securities. In this theory the uncertainty over a time period is modelled via the dividend matrix $D \in \R^{N\times S}$ representing for N securities and S states those securities can be in (only one of the states will be true), each entry $D_{ij}$ represents ``the units of accounts paid by the security i on state j".  Among some concepts introduced are the security price $q=D\psi  \in \R^N$ were $\psi$ is the state-price vector interpreted as ``the marginal cost of obtaining an additional unit of account in state j" \cite{DAP}. 
+
+\textbf{\ac{BPT} \& Mental accounting, 2000:} \ac{BPT} models a Portfolio as a set of portfolios each with its own objectives and performance and computes optimal portfolios as an aggregatios of subportfolios. The mental accounting framework  provides structure to this type of portfolio and a definition of risk to it as the probability of failing to reach the threshold level of return in each mental account \cite{behaviouralPortfolioTheory2000, mental_accounting_10}. 
+
+\textbf{\ac{SPT}, 1995:} \ac{SPT} models the portfolio $\pi(\cdot)$ as a series of stochastic processes each representing the amount invested in a stock at a given time, the value of each asset is calculated by multiplying the amount invested with a wealth process $V^{\pi,w}$, a stochastic process that can depend on the portfolio and initial capital ``$w$" \cite{stochastic_portfolio_theory_2009}. 
+
+\textbf{Model-free Portfolio Theory, 2023:} This model removes the assumption of an underlying probabilistic models for the assets in the portfolios, instead it proposes that each asset has a deterministic price trajectory and proposes the formulation of functionally generated portfolios \cite{model_free_portfolio_theory}. Moreover its derivation is based from a combination of \ac{SPT} with the theory of rough paths which is used to model the internal state of a system (like asset price) with an external control without having to guess a precise nature of the governing differential equations \cite{rough_paths_02} . 
+
+\subsubsection{AirBorne portfolio modelling}
+With the exception of \ac{BPT} all portfolios are modelled as a link between an identifier for an asset and a mathematical object, and \ac{BPT} can be identified as a sequence of sub-portfolios with the same structure.
+
+The hashmap structure in Julia is known as a dictionary and an instance of it can be created following Listing \ref{lst:portfolioExample}.
+
+\begin{lstlisting}[language=Julia,escapeinside={(*}{*)},label={lst:portfolioExample},caption={Example of portfolio model instantiation in Julia},captionpos=b]
+portfolio_instance = Dict()
+\end{lstlisting}
+
+\subsection{Assets and Asset Pricing}
+\subsubsection{Assets}
+Assets are financial instruments that can be bought or sold, they have two fundamental characteristics, its \textbf{current price} also known as the asset state 
+price and its \textbf{future payments} \cite{assetPricing}.
+
+\textbf{Future payments:} In equity stocks may pay dividends that are uncertain and depend on the performance of the company. Other assets may be bonds which deliver predetermined coupon payments which are issued by countries or corporations with the risk of the issuer defaulting. Similar future payments be established for derivatives. A \textbf{dividend} is defined as the payment of an asset at any given time \cite{assetPricing}. 
+
+Given the uncertainty of future payments stochastic processes can be used as a modelling tool for them\cite{assetPricing}.  
+
+\subsubsection{Asset Pricing}
+Asset pricing provides a framework to the relationship between returns and risks,  through a hypothesized behaviour of investors, hypothesizing the expected returns through an ``Asset Pricing Model" \cite{investment_management_book_2010}. 
+
+Asset pricing models can be categorized into ``positive" and ``nominative" models, the first simply hypothesise what the price is, whilst the latter hint what it should be \cite{investment_management_book_2010}. 
+
+Some models such as Capital Asset Pricing models, solely attempt to predict the a measure/estimate of the return expectation over risk , modelled  as an intrinsic variance/noise of the return value \cite{investment_management_book_2010}. But is not suitable to calculate variations of asset state-prices over time \cite{assetPricing}. 
+
+\subsubsection{Returns}   \label{sec::ch2_returnDef}
+The return is defined as a gain from holding an asset over a period of time. Using this definition two types of returns can be distinguished; \textbf{nominal returns} which are returns expressed in terms of units of a certain currency and \textbf{real returns} which are gains in terms of purchasing power \cite{assetPricing}.
+
+\subsubsection{AirBorne Asset Modelling}
+AirBorne models an asset as a quantity held a certain ``assetId", this can be related to an entry in a hashmap. 
+
+The returns of holding an asset over time is calculated by an through the Asset Valuation submodule in the data processing layer of the software introduced in Section \ref{sec::ch4_AssetValuation}, in this same module the overall return of a portfolio is also defined following the same definition of Section \ref{sec::ch2_returnDef}, this allows for many market models, engines and strategies to share the same valuation methods and be comparable to each other.
+
+The state-price on the other hand is defined during the execution of the order by a Market Model, which is addressed in Section \ref{sec::ch4_MarketModelling}, this is because the price paid for an asset can fluctuate based on Market Impact models introduced in Section \ref{sec::market_impact}.
+
+
+\subsection{The investment management process}
+Following the work of Fabozzi the process of investment management can be split into five tasks \cite{investment_management_book_2010}. 
+\begin{enumerate}
+    \item Setting investment objectives %TODO: define
+    \item Selection of investment policy %TODO: define 
+    \item Selection of investment strategy %TODO: define
+    \item Portfolio construction %TODO: define
+    \item Measurement of investment performance %TODO: define
+\end{enumerate}
+
+\textbf{Portfolio strategy:} The strategy selects the specific assets to be included in the portfolio. There are two classifications for portfolio strategies; \textit{active} which uses available information and forecasting techniques to achieve a better performance than a broadly diversified portfolio and \textit{passive} which takes a \textbf{minimal expectation input} and \textbf{diversification} to match performance of an \textbf{index} assuming all information is contained in the market price \cite{investment_management_book_2010}.
+
+\textbf{Portfolio construction:} During the construction an investor strives to build an \textit{efficient portfolio}, i.e., one that provides the greatest expected return (given some risk) or lowest risk given a return. Here risk needs to be quantified and three inputs are often needed, \textbf{future expected return}, \textbf{variance of asset return}, \textbf{correlation of asset return} \cite{investment_management_book_2010}.
+
+\textbf{Measurement of investment performance:} Is the calculation of the return realized by a portfolio manager over some time interval, the \textit{``evaluation period"} \cite{investment_management_book_2010}. Is worth pointing out the distinction between the portfolio and the portfolio manager at this point as the portfolio manager is the one making decisions affecting the composition of the portfolio. There are three aims to performance evaluation first if the portfolio manager outperforms a pre-established benchmark, second identification on how the calculated return was achieved and lastly assessing if the the performance was achieved by skill or luck \cite{investment_management_book_2010}.
+
+There are 2 approaches to for the measurement of investment performance by a portfolio manager; \textbf{single-index performance} and \textbf{performance attribution} which decompose the portfolio return so that a client how a portfolio manager achieved its return \cite{investment_management_book_2010}. 
+
+\textbf{Considerations on profit:} Tax factors should be included when considering an investment policy \cite{investment_management_book_2010}.
+
+\subsubsection{Measures}
+\textbf{Sharpe ratio:} Originally introduced for portfolio selection, the usage of Sharpe ratio can only be used if there are three elements defined first a notion of a risk free return, and two estimations around the behaviour of the portfolio in the future \textbf{Expected return} and \textbf{Standard deviation of expected returns}. It is assumed that any portfolio expected return can be modelled linearly against a deviation from the risk free rate and thus one maximizing the sharpe ratio (\ref{eq::def_sharpe}) would be optimal \cite{sharpe_ratio_og}.
+\begin{equation}
+    \label{eq::def_sharpe}
+    SR = \frac{\text{Expected return} - \text{Risk free return}}{\text{Standard deviation of expected returns}}
+\end{equation}
+
+\textbf{Dollar return:} The advantage of the dollar return (\ref{eq::dollar_return})is that one does not need to have a probabilistic model of the return, however one must be able to measure the market value of a portfolio at particular time instants to be able to calculate it \cite{investment_management_book_2010}.
+\begin{equation}
+    \label{eq::dollar_return}
+    R_p = \frac{MV_1 - MV_0 + D}{MV_0}
+\end{equation}
+\begin{enumerate}
+    \item $R_p = $ Portfolio's return
+    \item $MV_1 = $ Portfolio's market value at end of evaluation period.
+    \item $MV_0 = $ Portfolio's market value at start of evaluation period.
+    \item $D = $ Cash distributions from the portfolio to the client during the evaluation period.
+\end{enumerate}
+
+\textbf{Single Period Portfolio Return:} The return of a portfolio of assets over a single period (\ref{eq::single_period_portfolio_return}) can be calculated as the weighted sum of the return of the individual assets in the portfolio. It can also be referred as holding period return or ex post return \cite{investment_management_book_2010}.
+
+\begin{equation}
+    \label{eq::single_period_portfolio_return}
+    R_p = w_1R_1+w_2R_2+\mathellipsis+w_GR_G
+\end{equation}
+\begin{enumerate}
+    \item $R_p = $ Portfolio's return over the period
+    \item $R_g = $ Return of asset g over the period market value at end of evaluation period.
+    \item $w_g = $ Weight of asset g in the portfolio (i.e., market value of asset g as a proportion of the market value of the total portfolio)
+\end{enumerate}
+
+\textbf{Single Period Portfolio Expected Return:} Similarly the expected return of a portfolio over a single period (\ref{eq::single_period_portfolio_expected_return}) can be defined when returns are modelled through a probability distribution, usually the probability distribution is fitted from  historical data under the assumption that no significant changes should arise during the evaluation period \cite{investment_management_book_2010}.
+
+\begin{equation}
+    \label{eq::single_period_portfolio_expected_return}
+    E(R_p) = w_1E(R_1)+w_2E(R_2)+\mathellipsis+w_GE(R_G)
+\end{equation}
+
+% TODO: Decide if I may include it or not. (Probably won't add VaR to AirBorne)
+% \textbf{\ac{VaR}}: \ac{VaR} provides a measure of the amount of capital that can be loss due to unexpected changes in the price or rates of traded instruments in the market \cite{VaR97}. 
+
+
+\subsubsection{Constraints}
+
+\begin{enumerate}
+    \item \textbf{Client-imposed constraints:} Set by the fund manager like concentration limits, restriction on securities types \cite{investment_management_book_2010}.
+    \item \textbf{Regulatory constraints:} Concentration limits, restriction on securities types \cite{investment_management_book_2010}.
+\end{enumerate}
+
+
+
+\subsubsection{AirBorne investment management implementation}
+In AirBorne the investment manager is what we call a strategy, a function that given a state (a combination of past and present data) produces a set of orders to be executed by a market given a simulation engine.
+
+The performance evaluation
+
+\subsection{Portfolio Selection}
+
+Portfolio selection is the process of forming a portfolio that optimizes expected returns given an acceptable level of risk, it provides the methods to obtain optimal portfolios and is in general independent of the pricing model used for individual assets \cite{investment_management_book_2010}. 
+
+Diverse and novel approaches for portfolio selection has been put forward in recent years.
+
+\begin{enumerate}
+    \item \textbf{\ac{RO}:} \ac{RO} is used as a general tool for optimization under uncertainty, this allows the incorporation of errors around nominal estimates of models such as mean-variance model \cite{robust_optimization_portfolio_selection_21}. 
+    \item \textbf{\ac{EA}s:} A niche application of evolutionary algorithms present the \ac{DETS} for forex and equity portfolio optimization \cite{evolutionary_algorithm_22}.
+    \item \textbf{\ac{MPC}:} \ac{MPC} is used as a form of adaptive control by leveraging predictions of attributes around assets and using variables such as the ratio portfolio invested on each asset to minimize a cost functional that leads to an optimal portfolio over a period of time, given the accuracy of the predictions \cite{MultiPeriod_PO_mpc}.
+\end{enumerate}
+
+
+\subsubsection{Mean-Variance portfolio analysis}
+Mean-Variance Portfolio Analysis is a normative theory for portfolio selection, meaning that aims to describe the behaviour investors should follow to form an optimal portfolio \cite{investment_management_book_2010}.
+
+A well known portfolio selection technique is the Marowitz strategy, in this technique the returns over a number of assets is modelled as a multidimensional random variable, (i.e., a multivariate gaussian), afterwards one gathers a sample of returns over a certain time window, and estimates the expected return vector and correlation matrix of the sample. Then it is assumed that in the near future the behaviour of the returns should follow the same distribution and the objective of the problem is given a certain overall expected return desired to obtain the distribution of assets that minimizes the total variance \cite{classical_portfolio_theory}.
+
+In this project a state of the art \ac{MPC} controller will be tested following a Mean-Variance framework (described in Section \ref{ch3}), where given predictions on the return and the variance of the portfolio a linear quadratic form, quadratic on the variance and linear on the expected return is minimized over a series of time \cite{MultiPeriod_PO_mpc}.
+
+\subsubsection{Airborne portfolio selection implementation}
+A simple portfolio selection strategy using the Markowitz strategy can be implemented in Julia following Listing \ref{lst:markowitzExample}, AirBorne provides out of the box a strategy that implements the Markowitz strategy following a very similar code.
+
+\clearpage
+
+\begin{lstlisting}[language=Julia,escapeinside={(*}{*)},label={lst:markowitzExample},caption={Markowitz example in Julia using Direct Search},captionpos=b]
+# Let returnHistory be a DataFrame with one column per assetId
+# and one row per sampled time.
+using DataFrames
+using DirectSearch
+horizon=10
+min_growth=0.001 # Minimum desired growth in one interval
+d = returnHistory[(end - horizon + 1):end, :] # History of returns
+M = covariance(d) # Covariance Matrix
+m = mean(Matrix(d[!, :]); dims=1)
+max_return, ix = findmax(m)
+
+if max_return > min_growth # Feasible problem
+    initial_point = zeros(size(m)) # Warm start solution
+    initial_point[ix] = 1.0
+
+    upper_cons(x) = all(x .<= 1)
+    lower_cons(x) = all(x .>= 0)
+    min_return(x) = min_growth - (m * x)[1] # I want at least a 0.1% return in 1 day 
+    obj(x) = x' * M * x
+
+    p = DSProblem(length(m))
+    SetGranularity(p, Dict([i => 0.001 for i in 1:length(m)]))
+    SetObjective(p, obj)
+    AddProgressiveConstraint(p, min_return)
+    AddExtremeConstraint(p, upper_cons)
+    AddExtremeConstraint(p, lower_cons)
+    SetInitialPoint(p, vec([i for i in initial_point]))
+    Optimize!(p)
+    solution = isnothing(p.x) ? zeros(size(m)) : p.x
+else
+    solution = zeros(size(m)) # Sell absolutely everytihng. Market is going down.
+end
+
+\end{lstlisting}
+
+\subsection{Optimal Execution or Portfolio Liquidation}
+A separate (although not always needed if already accounted in the portfolio selection step) is known as \textbf{Optimal Execution}, usually happens once a particular portfolio or change in portfolio composition is selected, this means that the final portfolio composition at a certain time is known (as well as the initial composition of the portfolio) \cite{OptimalExecutionReview}.
+
+The objective is to minimize the costs from moving from one portfolio configuration to another \cite{OptimalExecutionReview}. A simple application is of brokers collecting orders from multiple portfolio managers and combining them into a metaorder \cite{slides_on_optimal_execution}.  
+
+\begin{quote}
+    Metaorder: ``An execution performed by a single Broker, on a single stock, in a given direction. All metaorders are completed within a trading day \cite{slides_on_optimal_execution}."
+\end{quote}
+
+During the execution phase, particularly when large orders are considered it is extremely important to consider the effect of the application of the order on the market price, this known as market impact.
+
+\subsubsection{Market impact} \label{sec::market_impact}
+Market impact is the influence of the transaction on the price of equity, it gains relevance as one places orders in the market the price may fluctuate, this combined with the execution cost creates a trade-off between placing large orders or splitting such order into a sequence of smaller orders \cite{FinancialMathematics_marketImpact}. Some of the models used in literature are:
+
+\begin{enumerate}
+    \item \textbf{Hausman, 1992:} Used ordered probit to estimate the fluctuation of the price of a selected, very liquid sample of stock in the US during 1988 given their transactions \cite{hausman_marketImpact_probitModel}.
+    \item \textbf{Bertsimas and Lo, 1998:} Introduced given a "price-impact" function the optimal execution of large orders using dynamic programming in 1998 \cite{Bertsimas_early_marketImpact}.
+    \item \textbf{Almgren and Chriss, 1999:} Similarly Almgren and Chriss split the impact into a transient and permanent component, each can be non-linear in principle although a linear impact is presented as a special case \cite{almgren2001optimal}.
+\end{enumerate}
+
+
+\subsubsection{Airborne optimal execution implementation}
+
+Airborne provides out of the box functions to compute optimal execution, following an affine fee structure with respect to the value of shares purchased under the assumption of a stiff market were the price of each unit of asset does not change with the amount.
+
+Listing \ref{lst:optimalExecutionExample} shows the logic behind an optimal execution solution provided on the \textbf{Static Market} model were one tries to minimize the loss of value on a transaction subject to fixed and variable fees for each transacted asset (\ref{eq::optimalExecutionExample}).
+
+
+
+\begin{equation}
+\label{eq::optimalExecutionExample}  
+\begin{aligned}
+& \max_{d} k   \\
+\text{s.t.} & k\geq 0 \\
+& D1 + d  - \hat{e}_{c} * \left(\alpha_v |d| + \alpha_f \sum{(1-\delta_{\odot}(d))}  \right) = D2 * k
+\end{aligned}
+\end{equation}
+
+\begin{enumerate}
+    \item $D_1$: Initial distribution of value of the portfolio, vector of norm 1 (in dollars).
+    \item $D_2$: Final distribution of value of the portfolio, vector of norm 1 (in dollars).
+    \item $\hat{e}_{c}$: Vector with 1 on the entry representing the currency fees.
+    \item $k$: Value of final portfolio with respect to initial.
+    \item $d$: Dollars to buy/sell of each asset (vector).
+    \item $\alpha_v$: Proportional cost with respect to transacted amount (scalar quantity)
+    \item $\alpha_f$: Fix cost per transaction (scalar quantity)
+\end{enumerate}
+
+\begin{lstlisting}[language=Julia,escapeinside={(*}{*)},label={lst:optimalExecutionExample},caption={Optimal Execution example in Julia using JuMP and Ipopt},captionpos=b]
+using AirBorne.Utils: (* \delta{} *)
+using JuMP: Model, @variable, @objective, @constraint, optimize!, value, set_silent
+using SparseArrays: sparse, I, spdiagm, SparseVector
+using Ipopt: Ipopt
+import MathOptInterface as MOI
+# Generate Source Distribution from Portfolio
+D1 = sourceDst; D2 = targetDst
+curency_symbol = "FEX/USD";
+curency_pos = findall(x -> x == curency_symbol, [x for x in keys(D1)])[1]
+e_c = SparseVector(N, [curency_pos], [1]) # Dollar Fees Vector
+N = length(sourceDst)
+M = zeros(N, N)
+M[curency_pos, :] = propShareVal .* -1 # Price to pay per share (without fees)
+P = spdiagm(0 => propShareVal) + M
+##### Optimization Problem
+genOrderModel = Model(Ipopt.Optimizer)
+@variable(genOrderModel, 0 <= k) # Proportionality factor (shrinkage of portfolio)
+@variable(genOrderModel, d[1:N])  # Amount to buy/sell of each asset
+@variable(genOrderModel, fee_v >= 0) # Amount Proportional Fees
+@constraint(genOrderModel,[fee_v; d.* (*\alpha*)_v] in MOI.NormOneCone(1 + N)) # Norm-1
+@variable(genOrderModel, fee_c >= 0) # Number of transactions fees
+@constraint(genOrderModel, fee_c == sum(-(* \delta{} *).(d) .+ 1) * (*\alpha*)_f) 
+@constraint(genOrderModel, d[curency_pos] == 0) # Do not buy or sell dollars (this is the currency).
+@constraint(genOrderModel,D1.+P*d.-(e_c.*(fee_v + fee_c)).== D2.* k) # D1+ P*d-Fees->D2*k
+@objective(genOrderModel, Max, k) # With variance minimization
+optimize!(genOrderModel)
+d = value.(d)
+\end{lstlisting}

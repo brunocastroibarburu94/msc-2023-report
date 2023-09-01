@@ -1,0 +1,107 @@
+\chapter{Julia Implementation}
+\label{ch4}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% IMPORTANT
+\singlespacing % THESE THREE
+\minitoc % LINES MUST APPEAR IN
+\doublespacing % EVERY CHAPTER
+% COPY THEM IN ANY NEW CHAPTER
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Julia Features}
+In this section the most relevant Julia features and limitations for this project are addressed. For each feature relevant links to the official documentation and examples on how they are leveraged in this project are provided.
+
+\subsection{Features}
+This section will focus on important features Julia has and the importance of the collection of these features when considering the project at hand.
+
+Some features like multiple dispatch are generally known to be exclusive to the Julia language, however given the shear amount of languages is relatively difficult to claim that no language also has some of them.
+
+Some languages may have workarounds to simulate the features to some extent (i.e. You can create a function in python that re-directs to a function based on the input Types simulating the multiple dispatch behaviour) usually these workarounds require extra computation and thus are not as efficient. The features addressed in this section are natively designed for the Julia language.
+
+\subsubsection{Multiple dispatch}
+\cite{julia_performance_tips_multiple_dispatch}
+
+\subsubsection{Metaprogramming}
+\url{https://docs.julialang.org/en/v1/manual/metaprogramming/}
+
+\subsubsection{Parametric Types}
+\url{https://docs.julialang.org/en/v1/manual/types/#Parametric-Types}
+
+\subsubsection{Output Preallocation}
+Julia allows to bypass a common bottleneck, which is memory allocation and garbage collection by preallocating the output of a function \cite{julia_performance_tips}.
+
+In practice this looks like the two excerpts of code below, where the addition of money in potentially different currencies is defined, if the currencies are different we want to form a wallet with both amounts, and if the currencies are the same then we want to have money in the same currency as the ones being aggregated.
+\begin{lstlisting}[language=Julia]
+# Not Type Stable
+Base.:+(a::Money{A}, b::Money{B}) where {A,B} = A==B ? Money{A}(a.value + b.value) : Wallet(Dict(A=>a.value,B=>b.value)) 
+\end{lstlisting}
+\begin{lstlisting}[language=Julia]
+# Type Stable
+Base.:+(a::Money{A}, b::Money{A}) where {A} = MoneyH{A}(a.value + b.value) 
+Base.:+(a::Money{A}, b::Money{B}) where {A,B} = WalletB(Dict(A=>a.value,B=>b.value)) 
+\end{lstlisting}
+Looking at the examples is easy to see that the first one is not type stable therefore Julia cannot pre-allocate the output prior to run-time whilst and the second is because two methods are put forward and leveraging multiple dispatch the output type is predictable and memory can be allocated efficiently.
+
+\subsubsection{Module Loading}
+Unlike C/C++,  when importing modules (or packages for C) in separate parts of the code the existing module is just made available into the scope instead of being loaded again \cite{julia_differences}. 
+\subsection{Constraints and Best Practices}
+
+Language constraints and best practices are not a bad thing per se, constraints are imposed by the structure of the code and is what gives us the guidelines to code itself, without constraints there would be no structure to follow. Best practices are structures that if not violated will improve either computational efficiency, readability or maintainability/future proofing of the code.
+
+\subsubsection{Type stability}
+If the type of the output of a function is predictable and does not depend on the specific values of the input the code in julia is faster, this is because the type of the output of the function can be accounted at compilation time \cite{julia_performance_tips, julia_qa_stability}.
+
+\subsubsection{Unicode Input}
+A distinguishable feature of Julia is its extended Unicode input this allows to mathematical symbols to be used in the language closing the gap between mathematical modelling and programmatic code representation, albeit unicode representation is not unique to julia, the variety of ``abbreviations" available allow to have expression like the one in the snippet below as part of the code \cite{julia_unicode_input}.
+
+\begin{lstlisting}[language=Julia,escapeinside={(*}{*)}]
+(*$\psi$*)=3 
+if (*$\psi \in$*) [1,2,3]
+    # Do something
+else 
+    # Do something else
+end
+\end{lstlisting}
+
+Although it seems like a small gain, it significantly expands the vocabulary available to define variables, and when making code oriented to address needs in field of physics and mathematical allows to align variable names with their counterparts in literature whilst increasing readability by shortening the variable names without losing meaning. Is worth mentioning that other languages such as like Maple and Mathematica also support this feature.
+
+
+
+\section{AirBorne Package}
+This project delivered the Julia package AirBorne\cite{AirBorne}.
+
+\subsection{High level design}
+
+\subsection{Data layer} 
+
+\subsubsection{Asset Valuation} \label{sec::ch4_AssetValuation}
+
+
+\subsection{Market Modelling} \label{sec::ch4_MarketModelling}
+
+
+\subsection{}
+
+
+
+
+
+
+% \subsubsection{ARCHModels.jl}
+% ARCHModels.jl provides the necessary tools to simulate \ac{ARCH} and \ac{P-ARCH} models \cite{ARCHModels.jl} . 
+
+% The \ac{ARCH} model was originally introduced as a model to simulate inflation on the \ac{UK}, this model is characterized by not having constant variance conditional to the recent past, but overall constant unconditional variance, meaning that recent past provide information about the single period next variance \cite{ARCHModels_og_paper}.  Whereas the \ac{P-ARCH} model was first proposed for modelling the seasonal volatility patter of asset returns were seasonal periodicity on its behaviour can be observed \cite{Periodic_ARCHModels_og_paper} .
+
+% Moreover this package also provides some standard datasets such as: 
+% \begin{enumerate}
+%     \item ARCHModels.BG96: Data from Bollerslev and Ghysels\cite{Periodic_ARCHModels_og_paper,ARCHModels.jl}.
+%     \item ARCHModels.DOW29: Stock returns, in procent, from 03/19/2008 through 04/11/2019, for tickers AAPL, IBM, XOM, KO, MSFT, INTC, MRK, PG, VZ, WBA, V, JNJ, PFE, CSCO, TRV, WMT, MMM, UTX, UNH, NKE, HD, BA, AXP, MCD, CAT, GS, JPM, CVX, DIS \cite{ARCHModels.jl}.
+% \end{enumerate}
+
+\subsection{Strategies}
+Strategies define the trading logic that an agent implements given data provided by the market.
+\subsubsection{\ac{SMA}}
+\textbf{Optimization Routine:} 
+

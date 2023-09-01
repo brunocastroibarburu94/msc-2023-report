@@ -1,0 +1,161 @@
+% Template for MSc final reports
+% EEE Department - Imperial College London
+%
+% INSTRUCTIONS
+% (1) Compile using LuaLatex (it is the successor of pdflatex). To check this on Overleaf, click on the Menu on the top left.
+% (2) Complete the SETUP below
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DO NOT MODIFY FROM HERE ...
+\documentclass[12pt,twosided]{ic_eee_thesis}
+
+\usepackage[style=ieee,backend=biber,hyperref=auto]{biblatex}
+\addbibresource{references.bib}
+% ... TO HERE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%% SETUP %%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% EDIT THE FOLLOWING INFORMATION WITH YOUR DATA
+\title{Algorithmic trading using optimal control in the Julia programming language}
+\subtitle{} % use \subtitle{} to remove it
+\author{B. Castro}
+\cid{02353208}
+\supervisor{Prof. E. Kerrigan} %UK: Dr no dot, prof has dot
+\submityear{2023}
+% PICK A DEGREE FROM THE LIST BELOW 
+% DO NOT MODIFY THE NAMES
+\course{Control and Optimisation}
+%\course{Analogue and Digital Integrated Circuit Design}
+%\course{Applied Machine Learning}
+%\course{Communications and Signal Processing}
+%\course{Control and Optimisation}
+%\course{Future Power Networks}
+
+% Do you want a list of figures?
+% Do you want a list of tables?
+% Do you want an acknowledgement page?
+% Do you want a list of acronyms?
+\setboolean{list_of_figures}{true} % false or true - Default is true
+\setboolean{list_of_tables}{false} % false or true - Default is false
+\setboolean{acknowledgement}{true} % false or true - Default is true
+\setboolean{acronyms}{true} % false or true - Default is true
+
+%%%%%%%%%%%%% END SETUP %%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% ADDITIONAL PACKAGES
+% You can add your packages below. Note that the following packages are already loaded: pgfcore, geometry, bookmark, graphicx, setspace, kantlipsum, fontspec, polygrossia (default English), minitoc, silence, background, xpatch, tikzpagenodes, totcount, fancyhdr, titlesec and the tikz libraries calc, shapes.symbols and shapes.misc  
+
+%Examples
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage[inkscapelatex=false]{svg}
+\usepackage{dsfont}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{longtable}
+%...
+
+% ADDITIONAL COMMANDS
+%Examples
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{mygreen}{RGB}{28,172,0} 
+\definecolor{mylilas}{RGB}{170,55,241}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinelanguage{Julia}%
+  {morekeywords={abstract,break,case,catch,const,continue,do,else,elseif,%
+      end,export,false,for,function,immutable,import,importall,if,in,%
+      macro,module,otherwise,quote,return,switch,true,try,type,typealias,%
+      using,while},%
+   sensitive=true,%
+   % alsoother={$},%
+   morecomment=[l]\#,%
+   morecomment=[n]{\#=}{=\#},%
+   morestring=[s]{"}{"},%
+   morestring=[m]{'}{'},%
+}[keywords,comments,strings]%
+
+\lstdefinestyle{JuliaStyle}{
+    basicstyle= \ttfamily,
+    backgroundcolor=\color{backcolour},   
+    commentstyle= \color{ForestGreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{magenta},
+    basicstyle=\ttfamily\scriptsize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    aboveskip=\medskipamount
+}
+
+\lstset{%
+    style            = JuliaStyle,
+    language         = Julia
+}
+
+% \DeclareMathOperator{\diag}{diag}
+% \DeclareMathOperator{\vect}{vec}
+
+\input{notation.tex} % short-hand notation and macros
+
+%...
+
+
+\begin{document}
+
+\preamble % Do not change - required
+
+% EDIT THE CONTENT OF THE FILES
+% Abstract.tex
+% OrigSta_Copyright.tex
+% Acknowledgement.tex
+% You can find them under the folder 
+% "chapters" on the left column
+
+% ADD AS MANY CHAPTERS AS NEEDED
+% BY CREATING .TEX FILES IN THE FOLDER chapters
+% AND ADDING \input{namechapter.tex} BELOW
+\input{chapters/C1-Intro}
+\input{chapters/C2-Finance}
+\input{chapters/C3-Control}
+\input{chapters/C4-Julia}
+\input{chapters/C5-Results}
+
+
+\conclusions % Do not change - required
+% EDIT THE CONTENT OF THE FILE
+% Conclusions.tex
+% You can find it under the folder 
+% "chapters" on the left column
+
+% APPENDICES ARE OPTIONAL
+% COMMENT OUT BOTH LINES BELOW TO REMOVE THEM
+% ADD CHAPTERS TO ADD MULTIPLE APPENDICES
+\appendix 
+\input{AppendixA.tex}
+%\input{AppendixB.tex} % Example second appendix (need to create the file in "chapters")
+
+
+\cleardoublepage % Do not change - required
+\RemoveLabels % Do not change - required
+\printbibliography[title={Bibliography},heading=bibintoc] % Do not change - required
+
+\end{document}
